@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Interactiva de Razonamiento Clínico: Caso TEP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: Se ha diseñado una simulación de caso clínico guiada. La estructura principal es un layout de dos columnas: una barra de navegación lateral fija con los 9 pasos y un área de contenido principal. Este diseño permite al usuario navegar libremente entre los pasos o seguirlos en orden. La interactividad se centra en calculadoras para las escalas de Wells y sPESI, lo que transforma al usuario de un lector pasivo a un participante activo en el proceso diagnóstico y de estratificación. Esta estructura se eligió porque fomenta el aprendizaje activo y la comprensión del flujo de trabajo clínico de una manera más efectiva que una simple página de texto. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Proceso de 9 pasos. -> Goal: Organizar/Navegar. -> Viz/Method: Lista HTML estilizada como navegación lateral fija. -> Interaction: Clic para desplazamiento suave a la sección. -> Justification: Proporciona una estructura clara y acceso constante a todas las partes del proceso. -> Library/Method: HTML/CSS/JS.
+        - Report Info: Criterios de Wells. -> Goal: Informar/Interactuar. -> Viz/Method: Calculadora interactiva con checkboxes. -> Interaction: El usuario selecciona los criterios aplicables para ver el cálculo de la puntuación en tiempo real. -> Justification: Hace tangible el proceso de usar una regla de decisión clínica. -> Library/Method: Vanilla JS.
+        - Report Info: Resultado de la puntuación de Wells. -> Goal: Comparar/Informar. -> Viz/Method: Gráfico de barras simple. -> Interaction: El gráfico destaca la categoría de riesgo del paciente según la puntuación calculada. -> Justification: Ofrece una retroalimentación visual inmediata y fácil de interpretar sobre la probabilidad pre-prueba. -> Library/Method: Chart.js/Canvas.
+        - Report Info: Criterios sPESI. -> Goal: Informar/Interactuar. -> Viz/Method: Calculadora interactiva con checkboxes. -> Interaction: El usuario selecciona los criterios para calcular la puntuación de riesgo. -> Justification: Refuerza el aprendizaje del siguiente paso crucial: la estratificación del riesgo. -> Library/Method: Vanilla JS.
+        - Report Info: Texto guía y detalles del caso. -> Goal: Informar. -> Viz/Method: Bloques de texto en tarjetas estilizadas. -> Interaction: Ninguna. -> Justification: Presenta la información de forma clara y segmentada. -> Library/Method: HTML/Tailwind CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        .nav-link.active {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 text-center">Guía Interactiva de Razonamiento Clínico</h1>
+            <p class="text-center text-gray-600 mt-1">Un Caso de Tromboembolia Pulmonar (TEP)</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col md:flex-row gap-8">
+            
+            <aside class="md:w-1/4 lg:w-1/5 md:sticky md:top-24 h-full">
+                <nav id="step-nav" class="bg-white p-4 rounded-lg shadow-md">
+                    <h2 class="font-bold text-lg mb-3 text-gray-700">Pasos del Proceso</h2>
+                    <ul class="space-y-2">
+                        <li><a href="#step-0" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">Caso Clínico</a></li>
+                        <li><a href="#step-1" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">1. Problema Principal</a></li>
+                        <li><a href="#step-2" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">2. Datos Pivote</a></li>
+                        <li><a href="#step-3" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">3. Diagnóstico Diferencial</a></li>
+                        <li><a href="#step-4" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">4. Jerarquización</a></li>
+                        <li><a href="#step-5" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">5. Probabilidad Pre-Prueba</a></li>
+                        <li><a href="#step-6" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">6. Pruebas Diagnósticas</a></li>
+                        <li><a href="#step-7" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">7. Confirmación</a></li>
+                        <li><a href="#step-8" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">8. Clasificación Severidad</a></li>
+                        <li><a href="#step-9" class="nav-link block px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition-colors duration-200">9. Tratamiento</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="md:w-3/4 lg:w-4/5">
+                <div class="space-y-8">
+                    
+                    <section id="step-0" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Introducción al Caso Clínico</h2>
+                        <p class="mb-4">Para ilustrar cada paso del proceso de razonamiento clínico, seguiremos el caso de una paciente. Esta sección presenta los datos iniciales con los que comienza nuestra evaluación.</p>
+                        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg">
+                            <p><span class="font-bold">Paciente:</span> Mujer de 58 años.</p>
+                            <p><span class="font-bold">Antecedentes:</span> Obesidad, reemplazo total de rodilla derecha hace 3 semanas.</p>
+                            <p><span class="font-bold">Motivo de Consulta:</span> Acude a urgencias por un cuadro de inicio súbito de falta de aire (disnea), dolor en el costado derecho del pecho, y presenta <span class="font-bold">edema y dolor en la pierna derecha</span>.</p>
+                        </div>
+                    </section>
+
+                    <section id="step-1" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 1: Identificar el Problema Principal y Causas Iniciales</h2>
+                        <p class="mb-4">El primer paso es definir el problema y crear una lista amplia de posibles causas. Antes de cualquier análisis, se realiza la valoración ABCDE para asegurar la estabilidad del paciente. Concluimos que está estable y podemos proceder.</p>
+                        <h3 class="font-semibold text-lg mb-2">Lluvia de Ideas de Causas (Organización Anatómica)</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-700">
+                            <li><span class="font-semibold">Cardíacas:</span> Síndrome coronario agudo, pericarditis, disección aórtica.</li>
+                            <li><span class="font-semibold">Pulmonares/Pleurales:</span> Tromboembolia pulmonar (TEP), neumonía, neumotórax.</li>
+                            <li><span class="font-semibold">Pared Torácica:</span> Costocondritis, desgarro muscular.</li>
+                            <li><span class="font-semibold">Gastrointestinales:</span> Reflujo gastroesofágico.</li>
+                            <li><span class="font-semibold">Psicógenas:</span> Trastorno de ansiedad.</li>
+                        </ul>
+                    </section>
+
+                    <section id="step-2" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 2: Recopilar Datos Pivote y Sintetizar</h2>
+                        <p class="mb-4">Buscamos información clave en la historia y la exploración para acortar la lista de posibilidades. Estos "datos pivote" son cruciales para enfocar nuestro diagnóstico.</p>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2">Anamnesis y Exploración</h3>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Movilidad muy limitada post-cirugía.</li>
+                                    <li>FC: 112 lpm, FR: 24 rpm, SatO2: 91%.</li>
+                                    <li><span class="font-bold text-red-600">Edema y dolor a la palpación en pantorrilla derecha.</span></li>
+                                    <li>Auscultación pulmonar y cardíaca normal.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-lg mb-2">Síntesis del Problema</h3>
+                                <p><span class="font-semibold">¿Quién es el paciente?</span> Mujer de 58 años con factores de riesgo mayores para TEP (cirugía reciente, inmovilización).</p>
+                                <p><span class="font-semibold">¿Cómo es la enfermedad?</span> Cuadro agudo de disnea, dolor pleurítico, taquicardia, hipoxemia y <span class="font-bold">signos clínicos de Trombosis Venosa Profunda (TVP)</span>.</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="step-3" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 3: Diseñar un Diagnóstico Diferencial Específico</h2>
+                        <p class="mb-4">Con los datos pivote, la lista inicial se reduce drásticamente a las posibilidades más relevantes para *esta* paciente en particular.</p>
+                         <ol class="list-decimal list-inside space-y-2">
+                            <li><span class="font-bold">Tromboembolia Pulmonar (TEP):</span> Altamente probable por factores de riesgo y clínica (incluyendo signos de TVP).</li>
+                            <li><span class="font-bold">Síndrome Coronario Agudo:</span> Menos probable, pero debe descartarse por su gravedad.</li>
+                            <li><span class="font-bold">Neumonía:</span> Poco probable por auscultación normal y ausencia de fiebre.</li>
+                        </ol>
+                    </section>
+
+                    <section id="step-4" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 4: Jerarquizar el Diagnóstico Diferencial</h2>
+                        <p class="mb-4">Ordenamos la lista según la probabilidad y el riesgo para la vida. Esto nos permite enfocar nuestros esfuerzos diagnósticos en lo más importante primero.</p>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-green-100 border border-green-300 rounded-lg">
+                                <p><span class="font-bold text-green-800">1. Diagnóstico Principal:</span> Tromboembolia Pulmonar. Es la sospecha más probable y de mayor riesgo.</p>
+                            </div>
+                            <div class="p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+                                <p><span class="font-bold text-yellow-800">2. Diagnóstico a Descartar:</span> Síndrome Coronario Agudo. Aunque menos probable, un retraso sería catastrófico.</p>
+                            </div>
+                             <div class="p-3 bg-gray-100 border border-gray-300 rounded-lg">
+                                <p><span class="font-bold text-gray-800">3. Otras Posibilidades:</span> Neumonía atípica, pericarditis. Se mantienen en segundo plano.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="step-5" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 5: Estimar la Probabilidad Pre-Prueba</h2>
+                        <p class="mb-4">Antes de pedir estudios, cuantificamos nuestra sospecha usando una regla de decisión clínica. Para la TEP, los Criterios de Wells son una herramienta estándar. Interactúa con la calculadora para ver cómo se llega a la puntuación del paciente.</p>
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                            <div id="wells-calculator" class="space-y-2 p-4 border rounded-lg bg-gray-50">
+                                <h3 class="font-bold text-lg mb-2">Calculadora de Criterios de Wells</h3>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="3" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Signos clínicos de TVP (+3)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="3" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>TEP como diagnóstico más probable (+3)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1.5" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>FC > 100 lpm (+1.5)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1.5" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Inmovilización o cirugía reciente (+1.5)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>TEP o TVP previa (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Hemoptisis (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="wells-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Cáncer activo (+1)</span>
+                                </label>
+                                <div class="pt-4 text-center">
+                                    <p class="text-lg">Puntuación Total: <span id="wells-score" class="font-bold text-2xl text-blue-600">0</span></p>
+                                    <p id="wells-interpretation" class="font-semibold text-lg mt-1">&nbsp;</p>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="wellsChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="step-6" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 6: Seleccionar las Pruebas Diagnósticas</h2>
+                        <p class="mb-4">La elección de la prueba depende de la probabilidad pre-prueba. Con una probabilidad alta, necesitamos una prueba para confirmar el diagnóstico, no para descartarlo.</p>
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <p><span class="font-semibold">Estrategia:</span> Dado que la probabilidad de TEP alta (Wells 7pts), una prueba como el Dímero-D no es útil. Se requiere una prueba de imagen confirmatoria y mientras tanto debe iniciarse anticoagulación terapéutica empírica</p>
+                            <p class="mt-2"><span class="font-semibold">Prueba de Elección:</span> <span class="font-bold text-blue-700">Angiotomografía Computarizada (Angio-TC) de tórax.</span></p>
+                        </div>
+                    </section>
+                    
+                    <section id="step-7" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 7: Confirmar o Descartar el Diagnóstico</h2>
+                        <p class="mb-4">Se interpreta el resultado de la prueba en el contexto de nuestra alta sospecha clínica.</p>
+                        <div class="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 rounded-r-lg">
+                            <p><span class="font-bold">Resultado de la Angio-TC:</span> "Defectos de llenado en arterias pulmonares segmentarias y subsegmentarias derechas, compatibles con tromboembolia pulmonar aguda."</p>
+                            <p class="mt-2 font-bold text-lg">Conclusión: Se confirma el diagnóstico de TEP Aguda.</p>
+                        </div>
+                    </section>
+
+                    <section id="step-8" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 8: Clasificar la Severidad y Determinar Plan Inicial</h2>
+                        <p class="mb-4">Una vez confirmado el diagnóstico, estratificamos el riesgo para decidir el manejo inmediato. Usamos la escala sPESI para evaluar el riesgo de mortalidad a 30 días. La paciente tiene biomarcadores cardíacos normales y no hay disfunción del ventrículo derecho en el ecocardiograma.</p>
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                             <div id="spesi-calculator" class="space-y-2 p-4 border rounded-lg bg-gray-50">
+                                <h3 class="font-bold text-lg mb-2">Calculadora de sPESI</h3>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Edad > 80 años (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Historia de cáncer (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Enfermedad cardiopulmonar crónica (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>FC ≥ 110 lpm (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>PA sistólica < 100 mmHg (+1)</span>
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" data-points="1" class="spesi-criteria h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>SatO2 < 90% (+1)</span>
+                                </label>
+                                <div class="pt-4 text-center">
+                                    <p class="text-lg">Puntuación Total: <span id="spesi-score" class="font-bold text-2xl text-blue-600">0</span></p>
+                                    <p id="spesi-interpretation" class="font-semibold text-lg mt-1">&nbsp;</p>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-lg mb-2">Interpretación y Plan Inicial</h3>
+                                <p>Una puntuación sPESI de 1 o más indica un riesgo elevado lo que indica que requiere hospitalización, y esta hemodinámicamente estable y con biomarcadores y ECOTT sin disfunción ventricular lo que indica una TEP no masiva. (ya que está hemodinámicamente estable y sin datos de disfunción ventricular).</p>
+                                <ul class="list-disc list-inside mt-2">
+                                    <li>No requiere terapia de reperfusión (trombólisis).</li>
+                                    <li>Plan: Hospitalización general.</li>
+                                    <li>Plan: Continuar anticoagulación terapéutica.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="step-9" class="bg-white p-6 rounded-lg shadow-md scroll-mt-24">
+                        <h2 class="text-2xl font-bold mb-4 text-blue-600">Paso 9: Diseñar un Tratamiento Integral y Específico</h2>
+                        <p class="mb-4">Finalmente, se crea un plan de manejo completo y personalizado basado en el diagnóstico confirmado y la estratificación de riesgo.</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">➔</span>
+                                <div><span class="font-bold">Tratamiento Específico:</span> Continuar anticoagulación con Heparina de Bajo Peso Molecular y planear transición a anticoagulante oral directo a largo plazo.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">➔</span>
+                                <div><span class="font-bold">Tratamiento de Soporte:</span> Oxígeno suplementario para mantener SatO2 > 92% y analgesia para el dolor.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-3 mt-1">➔</span>
+                                <div><span class="font-bold">Plan de Monitorización:</span> Vigilar signos vitales, estar atento a signos de sangrado o deterioro hemodinámico.</div>
+                            </li>
+                        </ul>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('#step-nav .nav-link');
+
+            function updateActiveLink() {
+                let index = sections.length;
+                while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+                
+                navLinks.forEach((link) => link.classList.remove('active'));
+                if (navLinks[index]) {
+                    navLinks[index].classList.add('active');
+                }
+            }
+
+            window.addEventListener('scroll', updateActiveLink);
+            updateActiveLink();
+
+            const wellsCriteria = document.querySelectorAll('.wells-criteria');
+            const wellsScoreEl = document.getElementById('wells-score');
+            const wellsInterpretationEl = document.getElementById('wells-interpretation');
+
+            const spesiCriteria = document.querySelectorAll('.spesi-criteria');
+            const spesiScoreEl = document.getElementById('spesi-score');
+            const spesiInterpretationEl = document.getElementById('spesi-interpretation');
+
+            let wellsChart;
+            
+            function calculateWellsScore() {
+                let score = 0;
+                wellsCriteria.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        score += parseFloat(checkbox.dataset.points);
+                    }
+                });
+                wellsScoreEl.textContent = score.toFixed(1);
+                
+                let interpretation = '';
+                let riskLevel = 0;
+                if (score <= 1) {
+                    interpretation = 'Baja Probabilidad';
+                    riskLevel = 0;
+                } else if (score > 1 && score <= 4) {
+                    interpretation = 'Probabilidad Intermedia';
+                    riskLevel = 1;
+                } else {
+                    interpretation = 'Alta Probabilidad';
+                    riskLevel = 2;
+                }
+                wellsInterpretationEl.textContent = interpretation;
+                updateWellsChart(riskLevel);
+            }
+
+            function updateWellsChart(riskLevel) {
+                const backgroundColors = ['rgba(75, 192, 192, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(255, 99, 132, 0.6)'];
+                const borderColors = ['rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)', 'rgba(255, 99, 132, 1)'];
+                
+                const data = [0, 0, 0];
+                if (riskLevel === 0) data[0] = 1;
+                else if (riskLevel === 1) data[1] = 4;
+                else data[2] = 6;
+
+                wellsChart.data.datasets[0].data = data;
+                wellsChart.data.datasets[0].backgroundColor = backgroundColors[riskLevel];
+                wellsChart.data.datasets[0].borderColor = borderColors[riskLevel];
+                wellsChart.update();
+            }
+
+            function createWellsChart() {
+                const ctx = document.getElementById('wellsChart').getContext('2d');
+                wellsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Baja (≤1)', 'Intermedia (2-4)', 'Alta (>4)'],
+                        datasets: [{
+                            label: 'Probabilidad de TEP',
+                            data: [0, 0, 0], 
+                            backgroundColor: 'rgba(201, 203, 207, 0.6)',
+                            borderColor: 'rgba(201, 203, 207, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Categorías de Riesgo (Wells)'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Puntuación'
+                                },
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function calculateSPESIScore() {
+                let score = 0;
+                spesiCriteria.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        score += parseInt(checkbox.dataset.points);
+                    }
+                });
+                spesiScoreEl.textContent = score;
+
+                if (score === 0) {
+                    spesiInterpretationEl.textContent = 'Bajo Riesgo';
+                } else {
+                    spesiInterpretationEl.textContent = 'Alto Riesgo';
+                }
+            }
+
+            wellsCriteria.forEach(checkbox => checkbox.addEventListener('change', calculateWellsScore));
+            spesiCriteria.forEach(checkbox => checkbox.addEventListener('change', calculateSPESIScore));
+            
+            function simulateCase() {
+                const wellsCheckboxesToSelect = [
+                    'Signos clínicos de TVP (+3)',
+                    'TEP como diagnóstico más probable (+3)',
+                    'FC > 100 lpm (+1.5)',
+                    'Inmovilización o cirugía reciente (+1.5)'
+                ];
+
+                wellsCriteria.forEach(cb => {
+                    if (wellsCheckboxesToSelect.includes(cb.nextElementSibling.textContent)) {
+                        cb.checked = true;
+                    }
+                });
+
+                const spesiCheckboxesToSelect = [
+                    'FC ≥ 110 lpm (+1)'
+                ];
+
+                spesiCriteria.forEach(cb => {
+                    if (spesiCheckboxesToSelect.includes(cb.nextElementSibling.textContent)) {
+                        cb.checked = true;
+                    }
+                });
+
+                createWellsChart();
+                calculateWellsScore();
+                calculateSPESIScore();
+            }
+
+            simulateCase();
+        });
+    </script>
+</body>
+</html>
